@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Generate blog posts with AI" />
+    <title>Automated Blog Generator</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>Welcome to the Automated Blog Generator!</h1>
+        <button id="theme-toggle" type="button" aria-label="Toggle dark mode">
+          🌙
+        </button>
+      </header>
+
+      <form action="/" method="post" autocomplete="off">
+        <label for="prompt">Enter your blog topic or prompt:</label>
+        <textarea
+          id="prompt"
+          name="prompt"
+          rows="5"
+          cols="60"
+          placeholder="Enter your blog topic or prompt"
+          required
+        ></textarea>
+
+  
+        <input type="submit" value="Generate Blog" />
+      </form>
+
+      {% if generated_blog %}
+      <div class="blog-content" id="blog-content">
+          <h2>Generated Blog:</h2>
+          <div class="blog-text">{{ generated_blog | safe }}</div>
+      </div>
+      <div style="margin-top: 12px;">
+          <button type="button" onclick="exportPDF()">Export as PDF</button>
+          <button type="button" onclick="exportWord()">Export as Word</button>
+      </div>
+      {% endif %}
+
+
+    <script>
+      const themeToggle = document.getElementById("theme-toggle");
+      const body = document.body;
+
+      function setTheme(theme) {
+        body.setAttribute("data-theme", theme);
+        localStorage.setItem("theme", theme);
+        themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+        themeToggle.setAttribute(
+          "aria-label",
+          theme === "dark" ? "Toggle light mode" : "Toggle dark mode"
+        );
+      }
+
+      themeToggle.addEventListener("click", () => {
+        const currentTheme = body.getAttribute("data-theme");
+        setTheme(currentTheme === "dark" ? "light" : "dark");
+      });
+
+      // Export as PDF with standardized font and formatting
+    function exportPDF() {
+        const element = document.getElementById('blog-content');
+        if (!element) {
+            alert('No blog content to export!');
+            return;
+        }
+        // Clone and style for PDF
+        const clone = element.cloneNode(true);
+        clone.style.fontFamily = "'Segoe UI', Arial, sans-serif";
+        clone.style.fontSize = "14px";
+        clone.style.color = "#222";
+        clone.style.background = "#fff";
+        clone.style.padding = "20px";
+        clone.style.borderRadius = "10px";
+        clone.style.maxWidth = "700px";
+        // Use html2pdf
+        html2pdf().set({
+            margin: 0.5,
+            filename: 'blog.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        }).from(clone).save();
+    }
+
+      // Export as Word with standardized font and formatting
+    function exportWord() {
+        const element = document.getElementById('blog-content');
+        if (!element) {
+            alert('No blog content to export!');
+            return;
+        }
+        const html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office'
+              xmlns:w='urn:schemas-microsoft-com:office:word'
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Export as Word</title>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #222; background: #fff; }
+                h1, h2, h3 { color: #2575fc; }
+                .blog-content { max-width: 700px; margin: 0 auto; }
+            </style>
+        </head>
+        <body>
+            ${element.innerHTML}
+        </body>
+        </html>`;
+        const source = 'data:application/msword;charset=utf-8,' + encodeURIComponent(html);
+        const fileDownload = document.createElement("a");
+        document.body.appendChild(fileDownload);
+        fileDownload.href = source;
+        fileDownload.download = 'blog.doc';
+        fileDownload.click();
+        document.body.removeChild(fileDownload);
+    }
+
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else {
+        setTheme("light");
+      }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  </body>
+</html>
